@@ -1,0 +1,46 @@
+service: debates-api-v3
+
+frameworkVersion: '2'
+useDotenv: true
+
+plugins:
+  - serverless-offline
+  - serverless-dotenv-plugin
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  lambdaHashingVersion: '20201221'
+  environment:
+    MONGO_DB_URL: ${env:MONGO_DB_URL}
+    SESSION_SECRET: ${env:SESSION_SECRET}
+    QUEUE_URL:
+        Ref: debatesReceiverQueue
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - sqs:SendMessage
+      Resource:
+        - Fn::GetAtt: [ debatesReceiverQueue, Arn ]
+
+functions:
+  main:
+    handler: handler.main
+    events:
+      - http: ANY /
+      - http: 'ANY {proxy+}'
+  receiver:
+    handler: sqshandler.main
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - debatesReceiverQueue
+              - Arn
+resources:
+  Resources:
+    debatesReceiverQueue:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName: "debatesReceiverQueue"
+
