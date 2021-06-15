@@ -17,6 +17,10 @@ app.set('trust proxy', 1);
 app.use(cors(corsOptions));
 app.use(express.json());
 
+app.get('/ping', function (req, res) {
+  res.status(200).json({status:"OK"});
+})
+
 app.use('/graphql', graphqlHTTP({
   schema: buildSchema(`
     type Query {
