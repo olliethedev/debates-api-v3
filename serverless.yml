@@ -1,4 +1,4 @@
-service: debates-api-v3
+service: debates-api
 
 frameworkVersion: '2'
 useDotenv: true
@@ -15,13 +15,13 @@ provider:
     MONGO_DB_URL: ${env:MONGO_DB_URL}
     SESSION_SECRET: ${env:SESSION_SECRET}
     QUEUE_URL:
-        Ref: debatesReceiverQueue
+        Ref: debatesPaymentQueue
   iamRoleStatements:
     - Effect: Allow
       Action:
         - sqs:SendMessage
       Resource:
-        - Fn::GetAtt: [ debatesReceiverQueue, Arn ]
+        - Fn::GetAtt: [ debatesPaymentQueue, Arn ]
 
 functions:
   main:
@@ -34,12 +34,13 @@ functions:
       - sqs:
           arn:
             Fn::GetAtt:
-              - debatesReceiverQueue
+              - debatesPaymentQueue
               - Arn
+
 resources:
   Resources:
-    debatesReceiverQueue:
+    debatesPaymentQueue:
       Type: "AWS::SQS::Queue"
       Properties:
-        QueueName: "debatesReceiverQueue"
+        QueueName: "debatesPaymentQueue"
 
