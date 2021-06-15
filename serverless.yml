@@ -27,8 +27,7 @@ functions:
   main:
     handler: handler.main
     events:
-      - http: ANY /
-      - http: 'ANY {proxy+}'
+      - httpApi: '*'
   receiver:
     handler: sqshandler.main
     events:
