@@ -1,5 +1,5 @@
 
-module.exports.sqshandler = async (event) => {
+module.exports.main = async (event) => {
     console.log('handler')
     for (const record of event.Records) {
       const messageAttributes = record.messageAttributes;

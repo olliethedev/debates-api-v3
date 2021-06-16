@@ -1,9 +1,10 @@
 const express = require('express');
-const { graphqlHTTP } = require('express-graphql');
-const { buildSchema } = require('graphql');
 const cors = require('cors');
 
 const { SQS } = require("aws-sdk");
+
+const graphqlMiddleware = require('./middleware/graphql');
+const mongoMiddleware = require('./middleware/mongoMiddleware');
 
 
 const app = express()
@@ -21,19 +22,6 @@ app.get('/status', function (req, res) {
   res.status(200).json({status:"OK"});
 })
 
-app.use('/graphql', graphqlHTTP({
-  schema: buildSchema(`
-    type Query {
-      hello: String
-    }
-  `),
-  rootValue: {
-    hello: () => {
-      return 'Hello world!';
-    },
-  },
-  graphiql: true, //process.env.IS_OFFLINE
-}));
 
 app.use("/enqueue", async function(req, res) {
   console.log("enqueue");
@@ -65,5 +53,8 @@ app.use("/enqueue", async function(req, res) {
 
   res.status(200).json({status:message});
 });
+
+app.use(mongoMiddleware);
+app.use('/graphql', graphqlMiddleware);
 
 module.exports = app;
