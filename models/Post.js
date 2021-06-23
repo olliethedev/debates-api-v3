@@ -33,14 +33,6 @@ const postSchema = new mongoose.Schema({
         minlength: 3,
         maxlength: 180,
     },
-    //post content types
-    contentType: {
-        type: String,
-        enum: [ "DEBATE","OPINION", "COMMENT" ],
-        required: true,
-        minlength: 4,
-        maxlength: 1000,
-    },
     //contains post data
     content: {
         type: String,

@@ -15,6 +15,7 @@ module.exports.getSchema = () =>{
     schemaComposer.Query.addFields({
         accountOne: AccountTC.mongooseResolvers.findOne(),
         postOne: PostTC.mongooseResolvers.findOne(),
+        postChildMany: PostTC.mongooseResolvers.findMany(),
     });
 
     //Set GraphQL Mutations from mongoose
