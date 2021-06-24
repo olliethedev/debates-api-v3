@@ -10,13 +10,16 @@ const postSchema = new mongoose.Schema({
     //post type
     type: {
         type: String,
-        enum : [ "DEBATE", "OPINION", "VOTE", "COMMENT" ],
+        enum : [ "DEBATE", "VOTE", "COMMENT" ],
         required: true
     },
     //parent post
     parent: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Post",
+        validate: function(v) {
+            return this.type !== "DEBATE";
+        },
     },
     //address of the creator
     creator: {
@@ -41,8 +44,61 @@ const postSchema = new mongoose.Schema({
     //extra fields
     extra: {
         type: new mongoose.Schema({
-            duration: { type: Number, default: DRAW_DURATION },
-        })
+            //Debate specific
+            //duration of the debate from createdAt time
+            duration: { 
+                type: Number,
+                required: function() {
+                    return this.parent().type === "DEBATE"
+                }
+            },
+            //possible outcomes for the debate
+            possibleOutcomes: {
+                type: [new mongoose.Schema({
+                    name: { type: String, required: true},
+                })],
+                required: function() {
+                    return this.parent().type === "DEBATE"
+                },
+                validate: function(v) { 
+                    return this.parent().type !== "DEBATE" || Array.isArray(v) && v.length > 0
+                },
+            },
+            //maximum number of winning outcomes for the event
+            possibleWinners: { 
+                type: Number,
+                min: 1,
+                required: function() {
+                    return this.parent().type === "DEBATE"
+                }
+            },
+            //Vote specific
+            //which outcome this vote is for
+            forOutcome: { 
+                type: mongoose.Schema.Types.ObjectId,
+                required: function() {
+                    return this.parent().type === "VOTE"
+                },
+                validate: function(val) {
+                    //todo check this.parent().parent contains val in their possibleOutcomes array 
+
+                    const ParentSchema = conn.model('Post', postSchema);
+                    const parentDocument = ParentSchema.findById(this.parent().parent);
+
+                    return new Promise(async function(resolve, reject) {
+                        const doc = await parentDocument;
+                        const outcome = doc.extra.possibleOutcomes.id(val);
+                        if(outcome&&outcome._id.equals(val)){
+                            resolve(true);
+                        }else{
+                            reject(false);
+                        }
+                        
+                    });
+                },
+            }
+        }),
+        required: true,
     }
 },
 {
