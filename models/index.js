@@ -4,12 +4,21 @@ const { SchemaComposer } = require('graphql-compose');
 module.exports.getSchema = () =>{
     const Account = require("../models/Account");
     const Post = require("../models/Post");
+
     const schemaComposer = new SchemaComposer();
     const customizationOptions = {
       schemaComposer,
     };
     const AccountTC = composeMongoose(Account, customizationOptions);
     const PostTC = composeMongoose(Post, customizationOptions);
+
+    //Add virtual functions
+    PostTC.addFields({ outcomeTotals: {
+        type: "JSON"
+    } });
+    PostTC.addFields({ hourlyStakeAggregate: {
+        type: "JSON"
+    } });
 
     //Set GraphQL Queries from mongoose
     schemaComposer.Query.addFields({

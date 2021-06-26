@@ -61,6 +61,7 @@ const postSchema = new mongoose.Schema({
                     return this.parent().type === "DEBATE"
                 },
                 validate: function(v) { 
+                    //todo if post allows adding to outcome array, make sure names are unique
                     return this.parent().type !== "DEBATE" || Array.isArray(v) && v.length > 0
                 },
             },
@@ -80,7 +81,6 @@ const postSchema = new mongoose.Schema({
                     return this.parent().type === "VOTE"
                 },
                 validate: function(val) {
-                    //todo check this.parent().parent contains val in their possibleOutcomes array 
 
                     const ParentSchema = conn.model('Post', postSchema);
                     const parentDocument = ParentSchema.findById(this.parent().parent);
@@ -104,5 +104,65 @@ const postSchema = new mongoose.Schema({
 {
     timestamps: true
 });
+
+postSchema.virtual('outcomeTotals').get(async function() {
+
+    const result = await conn.model('Post').aggregate(
+        [
+            {
+                $match: {
+                  parent: this._id,
+                },
+            },
+            {
+              $group: {
+                _id: "$extra.forOutcome",
+                total: {
+                  $sum: "$stake"
+                }
+              }
+            }
+          ],
+    );
+    return result;
+  });
+
+  postSchema.virtual('hourlyStakeAggregate').get(async function() {
+    const groupTimePeriodMinutes = 60;
+    const result = await conn.model('Post').aggregate(
+        [
+            {
+                $match: {
+                  parent: this._id,
+                },
+            },
+            {
+              $group: {
+                _id: {
+                    outcomeId: "$extra.forOutcome",
+                    year: { $year: "$createdAt" },
+                    day: { $dayOfMonth: "$createdAt" },
+                    month: { $month: "$createdAt" },
+                    hour: { $hour: "$createdAt" },
+                    interval: {
+                      $subtract: [
+                        { $minute: "$createdAt" },
+                        { $mod: [{ $minute: "$createdAt" }, groupTimePeriodMinutes] },
+                      ],
+                    },
+                },
+                total: {
+                  $sum: "$stake"
+                }
+              }
+            },
+            {
+              $sort: { "_id.year": 1, "_id.day": 1, "_id.month": 1, "_id.hour": 1 },
+            }
+          ],
+    );
+    return result;
+  });
+  postSchema.set("toJSON", { virtuals: true });
 
 module.exports = conn.model('Post', postSchema);
